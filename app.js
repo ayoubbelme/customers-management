@@ -3,20 +3,32 @@ const app = express()
 const port = 3000
 const mongoose = require('mongoose');
 app.use(express.urlencoded({ extended: true }));
-const MyData = require("./models/myDataSchema")
 app.set('view engine', 'ejs')
+app.use(express.static('public'))
+var methodOverride = require('method-override')
+app.use(methodOverride('_method'))
+var allRoutes = require('./routes/allRoutes');
+app.use( allRoutes);
+const addUserRoute = require("./routes/addUser");
+app.use( "/user/add.html",addUserRoute);
 
-app.get('/', (req, res) => {
-  MyData.find()
-  .then((result) => {console.log(result)})
-  .catch((err) => {console.log(err)})
+//auto refresh
+
+const path = require("path");
+const livereload = require("livereload");
+const liveReloadServer = livereload.createServer();
+liveReloadServer.watch(path.join(__dirname, 'public'));
 
 
-  res.render('home', { mytitle: 'Home' })
-})
-app.get('/index.html', (req, res) => {
-  res.send("<h1>done<h1>")
-})
+const connectLivereload = require("connect-livereload");
+const { errorMonitor } = require('stream');
+app.use(connectLivereload());
+
+liveReloadServer.server.once("connection", () => {
+  setTimeout(() => {
+    liveReloadServer.refresh("/");
+  }, 100);
+});
 
 
 
@@ -29,16 +41,3 @@ mongoose
     })
   })
   .catch((err) => { console.log(err) });
-
-app.post('/', (req, res) => {
-  console.log(req.body);
-  const myData = new MyData(req.body);
-  myData.save().then(() => {
-    res.redirect('index.html');
-  }).catch(
-    (err) => {
-      console.log(err);
-    }
-  );
-
-}) 
